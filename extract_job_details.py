@@ -5,6 +5,7 @@ import time
 import json
 import logging
 from typing import Dict, Any, List
+from prompt_loader import load_prompt, render_prompt
 
 import requests
 import gspread
@@ -104,8 +105,9 @@ def process(dry_run: bool = True):
         if not markdown:
             logger.warning(f"⚠️ Kein Markdown für {job_id}, übersprungen.")
             continue
-
-        user_prompt = f"Hier ist die Anzeige zur Analyse in Markdown-Format:\n\n{markdown}\n\nNutze dieses Format für deine Antwort:\n\n{{\n  \"id\": \"{job_id}\",\n  \"job_title\": \"\",\n  \"job_description\": \"\",\n  \"company_name\": \"\",\n  \"city\": \"\",\n  \"country\": \"\",\n  \"responsibilities\": \"\",\n  \"requirements\": \"\",\n  \"employment_type\": \"\",\n  \"seniority_level\": \"\",\n  \"industry\": \"\",\n  \"content_url\": \"{row.get('Source', '')}\"\n}}"
+        user_prompt_template = load_prompt('user_prompt_template.txt')
+        context = {'job_posting_in_markdown': markdown}
+        user_prompt = render_prompt(user_prompt_template, context)
 
         batch_items.append({"custom_id": job_id, "content": user_prompt})
         processed_count += 1
@@ -113,7 +115,7 @@ def process(dry_run: bool = True):
     if dry_run:
         logger.info(f"[DRY-RUN] Würde {len(batch_items)} Elemente in Batch packen.")
     else:
-        submit_batch(batch_items)
+        submit_batch(batch_items, job_id)
 
 if __name__ == "__main__":
     dry_run_flag = '--live' not in sys.argv

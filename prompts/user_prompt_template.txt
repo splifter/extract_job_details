@@ -1,0 +1,2 @@
+  Job Posting:
+  {{job_posting_in_markdown}}

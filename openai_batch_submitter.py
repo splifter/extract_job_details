@@ -3,6 +3,7 @@ import json
 import uuid
 import logging
 from typing import List, Dict
+from prompt_loader import load_prompt, render_prompt
 
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -23,9 +24,13 @@ logger.addHandler(handler)
 BATCH_DIR = "batches"
 os.makedirs(BATCH_DIR, exist_ok=True)
 
-def submit_batch(batch_items: List[Dict[str, str]]) -> None:
+def submit_batch(batch_items: List[Dict[str, str]], id) -> None:
     batch_id = str(uuid.uuid4())
     json_path = os.path.join(BATCH_DIR, f"{batch_id}.json")
+
+    system_prompt_template = load_prompt('system_prompt_template.txt')
+    context = {'id': id}
+    system_prompt = render_prompt(system_prompt_template, context)
 
     logger.info(f"📦 Erstelle Batch-Datei: {json_path}")
     with open(json_path, "w", encoding="utf-8") as f:
@@ -40,7 +45,7 @@ def submit_batch(batch_items: List[Dict[str, str]]) -> None:
                     "messages": [
                         {
                             "role": "system",
-                            "content": "Du arbeitest f\u00fcr ein Headhunter-Unternehmen und extrahierst relevante Informationen aus Jobanzeigen (Markdown). Gib die Infos strukturiert auf Deutsch im JSON-Format zur\u00fcck."
+                            "content": f"{system_prompt}"
                         },
                         {
                             "role": "user",
